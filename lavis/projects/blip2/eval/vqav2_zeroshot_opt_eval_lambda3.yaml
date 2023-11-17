@@ -26,9 +26,11 @@ datasets:
 
 run:
   task: vqa
+  # Control the sample ratio
+  sample_ratio: 0.01
   # optimization-specific
   batch_size_train: 16
-  batch_size_eval: 64
+  batch_size_eval: 32
   num_workers: 1
 
   # inference-specific
@@ -48,4 +50,4 @@ run:
   device: "cuda"
   world_size: 1
   dist_url: "env://"
-  distributed: True
+  distributed: False

@@ -135,7 +135,7 @@ class VQATask(BaseTask):
 
         if split in self.ques_files and split in self.anno_files:
             vqa = VQA(self.anno_files[split], self.ques_files[split])
-            vqa_result = vqa.loadRes(
+            vqa_result, quesIds = vqa.loadRes(
                 resFile=result_file, quesFile=self.ques_files[split]
             )
 
@@ -143,7 +143,7 @@ class VQATask(BaseTask):
             # n is precision of accuracy (number of places after decimal), default is 2
             vqa_scorer = VQAEval(vqa, vqa_result, n=2)
             logging.info("Start VQA evaluation.")
-            vqa_scorer.evaluate()
+            vqa_scorer.evaluate(quesIds)
 
             # print accuracies
             overall_acc = vqa_scorer.accuracy["overall"]

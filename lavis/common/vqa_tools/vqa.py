@@ -189,9 +189,10 @@ class VQA:
         anns = json.load(open(resFile))
         assert type(anns) == list, "results is not an array of objects"
         annsQuesIds = [ann["question_id"] for ann in anns]
-        assert set(annsQuesIds) == set(
-            self.getQuesIds()
-        ), "Results do not correspond to current VQA set. Either the results do not have predictions for all question ids in annotation file or there is atleast one question id that does not belong to the question ids in the annotation file."
+        # Comment this because we support uniform sampling
+        # assert set(annsQuesIds) == set(
+            # self.getQuesIds()
+        # ), "Results do not correspond to current VQA set. Either the results do not have predictions for all question ids in annotation file or there is atleast one question id that does not belong to the question ids in the annotation file."
         for ann in anns:
             quesId = ann["question_id"]
             if res.dataset["task_type"] == "Multiple Choice":
@@ -208,4 +209,4 @@ class VQA:
 
         res.dataset["annotations"] = anns
         res.createIndex()
-        return res
+        return res, annsQuesIds

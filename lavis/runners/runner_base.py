@@ -24,7 +24,10 @@ from lavis.common.dist_utils import (
 )
 from lavis.common.registry import registry
 from lavis.common.utils import is_url
-from lavis.datasets.data_utils import concat_datasets, reorg_datasets_by_split
+from lavis.datasets.data_utils import (
+    concat_datasets, 
+    reorg_datasets_by_split, 
+    UniformSampler)
 from lavis.datasets.datasets.dataloader_utils import (
     IterLoader,
     MultiIterLoader,
@@ -520,8 +523,12 @@ class RunnerBase:
                         # e.g. retrieval evaluation
                         sampler = sampler if is_train else None
                 else:
-                    sampler = None
-
+                    sample_ratio = self.config.run_cfg.sample_ratio
+                    if sample_ratio == 1:
+                        sampler = None
+                    else:
+                        sampler = UniformSampler(dataset, fraction=sample_ratio)
+    
                 loader = DataLoader(
                     dataset,
                     batch_size=bsz,

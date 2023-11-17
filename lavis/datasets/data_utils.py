@@ -282,3 +282,19 @@ def save_frames_grid(img_array, out_path):
     img = Image.fromarray(ndarr)
 
     img.save(out_path)
+
+"""
+Uniform sampler (to sample fraction of the dataset)
+"""
+class UniformSampler(torch.utils.data.Sampler):
+    def __init__(self, data_source, fraction=0.1):
+        self.data_source = data_source
+        self.fraction = fraction
+        self.num_samples = int(len(data_source) * fraction)
+
+    def __iter__(self):
+        # Randomly select indices with uniform distribution
+        return iter(torch.randperm(len(self.data_source))[:self.num_samples].tolist())
+
+    def __len__(self):
+        return self.num_samples
