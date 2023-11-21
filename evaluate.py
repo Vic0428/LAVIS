@@ -79,8 +79,12 @@ def main():
     cfg.pretty_print()
 
     task = tasks.setup_task(cfg)
-    datasets = task.build_datasets(cfg)
     model = task.build_model(cfg)
+    if cfg.run_cfg.debug:
+        print("DEBUG MODE EXIT")
+        return
+
+    datasets = task.build_datasets(cfg)
 
     runner = RunnerBase(
         cfg=cfg, job_id=job_id, task=task, model=model, datasets=datasets

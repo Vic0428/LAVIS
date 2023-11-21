@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=0 python  evaluate.py --cfg-path lavis/projects/blip2/eval/quantization/vqav2_8bit.yaml
