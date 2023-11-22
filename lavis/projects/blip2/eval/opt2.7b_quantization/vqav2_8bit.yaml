@@ -9,7 +9,7 @@ model:
   arch: blip2_opt
   model_type: pretrain_opt2.7b
   use_grad_checkpoint: False
-  quantization: "none" # Could be "None", "multiQuant", "8bit", "4bit"
+  llm_quantization: "8bit" # Could be "None", "multiQuant", "8bit", "4bit"
 
 datasets:
   coco_vqa: # name of the dataset builder
@@ -47,7 +47,7 @@ run:
   evaluate: True
   test_splits: ["val"]
 
-  debug: False
+  debug: True
   # distribution-specific
   device: "cuda"
   world_size: 1

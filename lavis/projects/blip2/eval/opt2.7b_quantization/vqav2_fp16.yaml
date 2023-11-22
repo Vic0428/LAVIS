@@ -9,7 +9,7 @@ model:
   arch: blip2_opt
   model_type: pretrain_opt2.7b
   use_grad_checkpoint: False
-  quantization: "8bit" # Could be "None", "multiQuant", "8bit", "4bit"
+  llm_quantization: "none" # Could be "None", "multiQuant", "8bit", "4bit"
 
 datasets:
   coco_vqa: # name of the dataset builder
@@ -28,7 +28,7 @@ datasets:
 run:
   task: vqa
   # Control the sample ratio
-  sample_ratio: 0.1
+  sample_ratio: 0.01
   # optimization-specific
   batch_size_train: 16
   batch_size_eval: 32

@@ -16,7 +16,7 @@ model:
   arch: blip2_opt
   model_type: caption_coco_opt2.7b
   use_grad_checkpoint: False
-  quantization: "8bit"
+  llm_quantization: "8bit"
 
 datasets:
   coco_caption: # name of the dataset builder

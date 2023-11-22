@@ -16,7 +16,7 @@ model:
   arch: blip2_opt
   model_type: caption_coco_opt2.7b
   use_grad_checkpoint: False
-  quantization: "4bit"
+  llm_quantization: "4bit"
 
 datasets:
   coco_caption: # name of the dataset builder
@@ -32,12 +32,12 @@ datasets:
 #             storage: '/export/share/datasets/vision/coco/images/'
 
 run:
-  sample_ratio: 1
+  sample_ratio: 0.01 
 
   task: captioning
   # optimizer
   batch_size_train: 32
-  batch_size_eval: 32
+  batch_size_eval: 16
   num_workers: 1
 
   max_len: 30

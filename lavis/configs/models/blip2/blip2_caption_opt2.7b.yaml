@@ -5,7 +5,7 @@
 
 model:
   arch: caption_coco_opt2.7b
-  load_finetuned: True
+  load_finetuned: False
 
   pretrained: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_opt2.7b.pth"
   finetuned: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_caption_opt2.7b.pth"

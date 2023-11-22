@@ -1,7 +1,9 @@
 import logging
 from transformers import OPTForCausalLM, BitsAndBytesConfig
-# from accelerate.utils import BnbQuantizationConfig
+from accelerate.utils import BnbQuantizationConfig, load_and_quantize_model
+from lavis.models.eva_vit import convert_weights_to_fp16
 import torch
+import torch.nn as nn
 import colorlog
 
 
@@ -39,3 +41,13 @@ def load_4bit_opt_model(opt_model):
         quantization_config=bnb_config
     )
     return opt_model
+
+def inplace_quantize_fp16_qformer(qformer):
+    convert_weights_to_fp16(qformer)
+
+def quantize_int8_qformer(qformer):
+    return torch.ao.quantization.quantize_dynamic(
+        qformer,
+        {nn.Conv1d, nn.Conv2d, nn.Linear},
+        dtype=torch.qint8
+    )

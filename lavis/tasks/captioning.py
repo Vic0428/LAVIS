@@ -127,7 +127,7 @@ def coco_caption_eval(coco_gt_root, results_file, split):
     coco_eval = COCOEvalCap(coco, coco_result)
 
     # evaluate on a subset of images by setting
-    # coco_eval.params['image_id'] = coco_result.getImgIds()
+    coco_eval.params['image_id'] = coco_result.getImgIds()
     # please remove this line when evaluating the full validation set
     # coco_eval.params['image_id'] = coco_result.getImgIds()
 

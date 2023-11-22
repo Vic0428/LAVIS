@@ -53,7 +53,7 @@ class Blip2OPT(Blip2Base):
         prompt="",
         max_txt_len=32,
         apply_lemmatizer=False,
-        quantization_mode="None"
+        llm_quantization="None"
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -86,19 +86,20 @@ class Blip2OPT(Blip2Base):
 
         self.opt_tokenizer = AutoTokenizer.from_pretrained(opt_model, use_fast=False)
 
-        self.quantization_mode = quantization_mode
-        if self.quantization_mode == "none":
+        self.llm_quantization = llm_quantization
+        if self.llm_quantization == "none":
             self.opt_model = OPTForCausalLM.from_pretrained(
                 opt_model, torch_dtype=torch.float16
             )
-        elif self.quantization_mode == "8bit":
+        elif self.llm_quantization == "8bit":
             self.opt_model = load_8bit_opt_model(opt_model)
-        elif self.quantization_mode == "4bit":
+        elif self.llm_quantization == "4bit":
             self.opt_model = load_4bit_opt_model(opt_model)
         else:
-            raise RuntimeError("Haven't supported this quantization mode")
+            raise RuntimeError("Haven't supported this llm_quantization mode")
 
         for name, param in self.opt_model.named_parameters():
+            print(f"param={name} with dtype={param.dtype}")
             param.requires_grad = False
         self.eos_token_id = self.opt_tokenizer(
             "\n", add_special_tokens=False
@@ -419,7 +420,7 @@ class Blip2OPT(Blip2Base):
         
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
 
-        quantization_mode = cfg.get("quantization", "none")
+        llm_quantization = cfg.get("llm_quantization", "none")
         model = cls(
             vit_model=vit_model,
             img_size=img_size,
@@ -432,8 +433,10 @@ class Blip2OPT(Blip2Base):
             prompt=prompt,
             max_txt_len=max_txt_len,
             apply_lemmatizer=apply_lemmatizer,
-            quantization_mode=quantization_mode
+            llm_quantization=llm_quantization
         )
         model.load_checkpoint_from_config(cfg)
-
+        # TODO: inplace quantization
+        # inplace_quantize_fp16_qformer(model.Qformer)
+        # model.Qformer = quantize_int8_qformer(model.Qformer)
         return model
