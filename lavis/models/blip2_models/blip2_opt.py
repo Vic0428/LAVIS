@@ -333,6 +333,11 @@ class Blip2OPT(Blip2Base):
                     query_output.last_hidden_state,
                     downsample=self.cs242Config.token_pruning_level
                 )
+            elif self.cs242Config.token_pruning == "our":
+                query_output.last_hidden_state = importance_pruning(
+                    query_output.last_hidden_state,
+                    downsample=self.cs242Config.token_pruning_level
+                )
 
             inputs_opt = self.opt_proj(query_output.last_hidden_state)
             atts_opt = torch.ones(inputs_opt.size()[:-1], dtype=torch.long).to(

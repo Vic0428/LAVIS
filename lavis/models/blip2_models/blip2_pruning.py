@@ -1,4 +1,7 @@
 import torch
+"""
+Baseline pruning strategies
+"""
 def position_based_baseline(query_tokens, downsample=1):
     """
     Pruning strategy based on position 
@@ -28,3 +31,14 @@ def magnitude_based_baseline(query_tokens, downsample=1):
         seleced_seq_batch.append(query_tokens[i, sorted_indices, :])
     reduced_tensor = torch.stack(seleced_seq_batch, dim=0)
     return reduced_tensor
+
+"""
+Our pruning strategy based on token-wise importance
+"""
+def importance_pruning(query_tokens, 
+                       cross_attention=None,
+                       downsample=1):
+    """
+    Pruning strategy based on cross-attention
+    """
+    raise RuntimeError("Not implemented")
