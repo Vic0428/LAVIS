@@ -98,9 +98,7 @@ class Blip2OPT(Blip2Base):
         else:
             raise RuntimeError("Haven't supported this llm_quantization mode")
 
-        for name, param in self.opt_model.named_parameters():
-            print(f"param={name} with dtype={param.dtype}")
-            param.requires_grad = False
+
         self.eos_token_id = self.opt_tokenizer(
             "\n", add_special_tokens=False
         ).input_ids[0]
@@ -421,6 +419,7 @@ class Blip2OPT(Blip2Base):
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
 
         llm_quantization = cfg.get("llm_quantization", "none")
+        qformer_quantization = cfg.get("qformer_quantization", "none")
         model = cls(
             vit_model=vit_model,
             img_size=img_size,
@@ -435,8 +434,20 @@ class Blip2OPT(Blip2Base):
             apply_lemmatizer=apply_lemmatizer,
             llm_quantization=llm_quantization
         )
+        # Load qformer parameters
         model.load_checkpoint_from_config(cfg)
-        # TODO: inplace quantization
-        # inplace_quantize_fp16_qformer(model.Qformer)
-        # model.Qformer = quantize_int8_qformer(model.Qformer)
+        # Quantize qformer
+        if qformer_quantization == "none":
+            pass
+        elif qformer_quantization == "fp16":
+            logger.info("Quantize Qformer into fp16")
+            inplace_quantize_fp16_model(model.Qformer)
+        elif qformer_quantization == "8bit":
+            logger.info("Quantize Qformer into 8bit")
+            model.Qformer = quantize_8bit_model(model.Qformer)
+        elif qformer_quantization == "4bit":
+            logger.info("Quantize Qformer into 4bit")
+            model.Qformer = quantize_4bit_model(model.Qformer)
+        else:
+            raise RuntimeError("Doesn't support this qformer quantization mode")
         return model

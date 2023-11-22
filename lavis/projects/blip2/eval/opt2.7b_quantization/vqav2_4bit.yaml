@@ -47,7 +47,7 @@ run:
   evaluate: True
   test_splits: ["val"]
 
-  debug: True
+  debug: False
   # distribution-specific
   device: "cuda"
   world_size: 1

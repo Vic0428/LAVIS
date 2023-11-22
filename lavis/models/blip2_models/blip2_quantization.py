@@ -42,12 +42,20 @@ def load_4bit_opt_model(opt_model):
     )
     return opt_model
 
-def inplace_quantize_fp16_qformer(qformer):
-    convert_weights_to_fp16(qformer)
+def inplace_quantize_fp16_model(model):
+    convert_weights_to_fp16(model)
 
-def quantize_int8_qformer(qformer):
-    return torch.ao.quantization.quantize_dynamic(
-        qformer,
-        {nn.Conv1d, nn.Conv2d, nn.Linear},
-        dtype=torch.qint8
-    )
+def quantize_8bit_model(model):
+    bnb_config = BnbQuantizationConfig(
+                    load_in_8bit=True,
+                    skip_modules=[])
+    return load_and_quantize_model(model, bnb_quantization_config=bnb_config)
+
+def quantize_4bit_model(model):
+    bnb_config = BnbQuantizationConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.bfloat16,
+                    skip_modules=[])
+    return load_and_quantize_model(model, bnb_quantization_config=bnb_config)
