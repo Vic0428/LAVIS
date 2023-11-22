@@ -23,6 +23,8 @@ def magnitude_based_baseline(query_tokens, downsample=1):
     for i in range(query_tokens.shape[0]):
         # Find topk token magnitude in each sequence
         _, indices = torch.topk(l2_norms[i, :], k=reduced_seq_len)
-        seleced_seq_batch.append(query_tokens[i, indices, :])
+        # Maintain its original order
+        sorted_indices, _ = torch.sort(indices)
+        seleced_seq_batch.append(query_tokens[i, sorted_indices, :])
     reduced_tensor = torch.stack(seleced_seq_batch, dim=0)
     return reduced_tensor
