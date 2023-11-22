@@ -324,7 +324,7 @@ class Blip2OPT(Blip2Base):
             )
             # When enable token_pruning, this the baseline strategy
             if self.cs242Config.token_pruning == "position":
-                query_output.last_hidden_state = magnitude_based_baseline(
+                query_output.last_hidden_state = position_based_baseline(
                     query_output.last_hidden_state,
                     downsample=self.cs242Config.token_pruning_level
                 )
