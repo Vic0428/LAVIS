@@ -11,6 +11,9 @@ model:
   use_grad_checkpoint: False
   llm_quantization: "none" # Could be "None", "8bit", "4bit"
   qformer_quantization: "none" # Could be "none", "fp16", "8bit" and "4bit"
+  token_pruning: "topk" # Could be "none", "postion", "topk"
+  token_pruning_level: 4
+  # vit_quantization: "8bit" # Could be "none", "fp16" and "8bit" and "4bit"
 
 datasets:
   coco_vqa: # name of the dataset builder
@@ -29,7 +32,7 @@ datasets:
 run:
   task: vqa
   # Control the sample ratio
-  sample_ratio: 0.01
+  sample_ratio: 0.1
   # optimization-specific
   batch_size_train: 16
   batch_size_eval: 32

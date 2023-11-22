@@ -14,7 +14,8 @@ import torch.nn as nn
 from lavis.common.registry import registry
 from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
 from lavis.models.blip2_models.blip2_quantization import *
-# from lavis.models.blip2_models.modeling_opt import OPTForCausalLM, OPTConfig
+from lavis.models.blip2_models.blip2_pruning import *
+from lavis.models.blip2_models.blip2_cs242 import CS242Config
 from transformers import AutoTokenizer, OPTForCausalLM, OPTConfig
 import transformers
 
@@ -53,7 +54,7 @@ class Blip2OPT(Blip2Base):
         prompt="",
         max_txt_len=32,
         apply_lemmatizer=False,
-        llm_quantization="None"
+        cs242Config: CS242Config=None
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -85,15 +86,19 @@ class Blip2OPT(Blip2Base):
             layer.intermediate = None
 
         self.opt_tokenizer = AutoTokenizer.from_pretrained(opt_model, use_fast=False)
+        
+        # Remember cs242 config
+        self.cs242Config = cs242Config 
 
-        self.llm_quantization = llm_quantization
-        if self.llm_quantization == "none":
+        # Quantize LLM model
+        llm_quantization = cs242Config.llm_quantization
+        if llm_quantization == "none":
             self.opt_model = OPTForCausalLM.from_pretrained(
                 opt_model, torch_dtype=torch.float16
             )
-        elif self.llm_quantization == "8bit":
+        elif llm_quantization == "8bit":
             self.opt_model = load_8bit_opt_model(opt_model)
-        elif self.llm_quantization == "4bit":
+        elif llm_quantization == "4bit":
             self.opt_model = load_4bit_opt_model(opt_model)
         else:
             raise RuntimeError("Haven't supported this llm_quantization mode")
@@ -317,6 +322,17 @@ class Blip2OPT(Blip2Base):
                 encoder_attention_mask=image_atts,
                 return_dict=True,
             )
+            # When enable token_pruning, this the baseline strategy
+            if self.cs242Config.token_pruning == "position":
+                query_output.last_hidden_state = magnitude_based_baseline(
+                    query_output.last_hidden_state,
+                    downsample=self.cs242Config.token_pruning_level
+                )
+            elif self.cs242Config.token_pruning == "topk":
+                query_output.last_hidden_state = magnitude_based_baseline(
+                    query_output.last_hidden_state,
+                    downsample=self.cs242Config.token_pruning_level
+                )
 
             inputs_opt = self.opt_proj(query_output.last_hidden_state)
             atts_opt = torch.ones(inputs_opt.size()[:-1], dtype=torch.long).to(
@@ -410,7 +426,7 @@ class Blip2OPT(Blip2Base):
 
         drop_path_rate = cfg.get("drop_path_rate", 0)
         use_grad_checkpoint = cfg.get("use_grad_checkpoint", False)
-        vit_precision = cfg.get("vit_precision", "fp16")
+        vit_precision = cfg.get("vit_precision", "fp32")
         freeze_vit = cfg.get("freeze_vit", True)
 
         prompt = cfg.get("prompt", "")
@@ -418,8 +434,17 @@ class Blip2OPT(Blip2Base):
         
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
 
+        # Quantization mode supported by CS242
         llm_quantization = cfg.get("llm_quantization", "none")
         qformer_quantization = cfg.get("qformer_quantization", "none")
+        vit_quantization = cfg.get("vit_quantization", "none")
+
+        # Pruning mode supported by CS242
+        token_pruning = cfg.get("token_pruning", "none")
+        assert (token_pruning in ["none", "position", "topk", "our"])
+        token_pruning_level = cfg.get("token_pruning_level", 1)
+        assert (isinstance(token_pruning_level, int))
+
         model = cls(
             vit_model=vit_model,
             img_size=img_size,
@@ -432,7 +457,11 @@ class Blip2OPT(Blip2Base):
             prompt=prompt,
             max_txt_len=max_txt_len,
             apply_lemmatizer=apply_lemmatizer,
-            llm_quantization=llm_quantization
+            cs242Config=CS242Config(
+                llm_quantization=llm_quantization,
+                token_pruning=token_pruning,
+                token_pruning_level=token_pruning_level
+            )
         )
         # Load qformer parameters
         model.load_checkpoint_from_config(cfg)
@@ -450,4 +479,20 @@ class Blip2OPT(Blip2Base):
             model.Qformer = quantize_4bit_model(model.Qformer)
         else:
             raise RuntimeError("Doesn't support this qformer quantization mode")
+        
+        # TODO: Quantize visual encoder
+        if vit_quantization == "none":
+            pass
+        elif vit_quantization == "fp16":
+            logger.info("Quantize visual encoder into fp16")
+            inplace_quantize_fp16_model(model.visual_encoder)
+        elif vit_quantization == "8bit":
+            logger.info("Quantize visual encoder into 8bit")
+            model.visual_encoder = quantize_8bit_model(model.visual_encoder)
+        elif vit_quantization == "4bit":
+            logger.info("Quantize visual enocder into 4bit")
+            model.visual_encoder = quantize_4bit_model(model.visual_encoder)
+        else:
+            raise RuntimeError("Doesn't support this visual encoder quantization mode")
+        
         return model
