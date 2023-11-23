@@ -36,9 +36,14 @@ def magnitude_based_baseline(query_tokens, downsample=1):
 Our pruning strategy based on token-wise importance
 """
 def importance_pruning(query_tokens, 
-                       cross_attention=None,
+                       cross_attentions=None,
                        downsample=1):
     """
     Pruning strategy based on cross-attention
     """
+    # len(cross_attentions) == 12 (N_LAYERS in q-former)
+    print(type(cross_attentions), len(cross_attentions))
+    # Shape (32, 12, 32, 257)
+    #        (Batch dim, head dim, query_tokens, image_tokens)
+    print(cross_attentions[0].shape)
     raise RuntimeError("Not implemented")
