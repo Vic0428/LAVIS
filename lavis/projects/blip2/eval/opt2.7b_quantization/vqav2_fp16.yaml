@@ -11,7 +11,7 @@ model:
   use_grad_checkpoint: False
   llm_quantization: "none" # Could be "None", "8bit", "4bit"
   qformer_quantization: "none" # Could be "none", "fp16", "8bit" and "4bit"
-  token_pruning: "topk" # Could be "none", "position", "topk", "our"
+  token_pruning: "our" # Could be "none", "position", "topk", "our"
   token_pruning_level: 8
   # vit_quantization: "8bit" # Could be "none", "fp16" and "8bit" and "4bit"
 

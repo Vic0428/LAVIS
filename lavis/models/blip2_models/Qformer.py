@@ -121,13 +121,29 @@ class BertSelfAttention(nn.Module):
             )
 
         self.num_attention_heads = config.num_attention_heads
-        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
+
+        # print('num_attention_heads:', self.num_attention_heads)
+
+        self.attention_head_size = int(config.hidden_size / config.num_attention_heads) 
+
+        # print('attention_head_size:', self.attention_head_size)
+
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
+        # print('all_head_size:', self.num_attention_heads )
+
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        # print('hidden_state_size:', config.hidden_size)
+
+        # print('config_encoder_width:', config.encoder_width)
+
+        # print("is_cross_attention:", is_cross_attention)
+        self.is_cross_attention = is_cross_attention
+
         if is_cross_attention:
             self.key = nn.Linear(config.encoder_width, self.all_head_size)
             self.value = nn.Linear(config.encoder_width, self.all_head_size)
+
         else:
             self.key = nn.Linear(config.hidden_size, self.all_head_size)
             self.value = nn.Linear(config.hidden_size, self.all_head_size)
@@ -184,8 +200,16 @@ class BertSelfAttention(nn.Module):
 
         if is_cross_attention:
             key_layer = self.transpose_for_scores(self.key(encoder_hidden_states))
+
+            # comment print 
+            # print('key_layer_shape:', key_layer.shape)
+
             value_layer = self.transpose_for_scores(self.value(encoder_hidden_states))
+
+            # print('value_layer_shape:', value_layer.shape)
+
             attention_mask = encoder_attention_mask
+
         elif past_key_value is not None:
             key_layer = self.transpose_for_scores(self.key(hidden_states))
             value_layer = self.transpose_for_scores(self.value(hidden_states))
@@ -198,6 +222,8 @@ class BertSelfAttention(nn.Module):
         mixed_query_layer = self.query(hidden_states)
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
+
+        print('query_layer_shape:', query_layer.shape)
 
         past_key_value = (key_layer, value_layer)
 
@@ -242,12 +268,17 @@ class BertSelfAttention(nn.Module):
                 )
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
+
+    
+
         if attention_mask is not None:
             # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
             attention_scores = attention_scores + attention_mask
 
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
+
+        self.attn_probs = attention_probs.detach().clone()
 
         if is_cross_attention and self.save_attention:
             self.save_attention_map(attention_probs)
@@ -272,6 +303,30 @@ class BertSelfAttention(nn.Module):
         )
 
         outputs = outputs + (past_key_value,)
+
+        # if is_cross_attention:
+
+            # Comment print
+            # print('num_attention_heads:', self.num_attention_heads)
+
+            # print('attention_head_size:', self.attention_head_size)
+
+            # print('all_head_size:', self.num_attention_heads )
+
+            # print('hidden_state_size:', self.config.hidden_size)
+
+            # print('config_encoder_width:', self.config.encoder_width)
+
+            # print('attention_probs_dropped_shape:', attention_probs_dropped.shape)
+
+            # print('attention_probs_shape:', attention_probs.shape)
+
+            # import datetime
+            # current_time = datetime.datetime.now()
+            # micro_seconds = current_time.microsecond 
+            # time_file = str(current_time) +'-' + str(micro_seconds)
+            # torch.save(attention_probs,f"{time_file}.pt")
+
         return outputs
 
 
@@ -442,10 +497,23 @@ class BertLayer(nn.Module):
                     output_attentions=output_attentions,
                 )
                 query_attention_output = cross_attention_outputs[0]
+
+                #print("query_attention_output:", query_attention_output)
+
+                #print("shape:", query_attention_output.shape)
+
+                #print("save query tensor.....")
+
+                #layer = self.layer_num
+                
+                #torch.save(query_attention_output,f"Q_{layer}.pt")
+
+                #print("query tensor saved...")
+
                 outputs = (
                     outputs + cross_attention_outputs[1:-1]
                 )  # add cross attentions if we output attention weights
-
+        
             layer_output = apply_chunking_to_forward(
                 self.feed_forward_chunk_query,
                 self.chunk_size_feed_forward,

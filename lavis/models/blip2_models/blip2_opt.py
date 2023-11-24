@@ -472,6 +472,7 @@ class Blip2OPT(Blip2Base):
         )
         # Load qformer parameters
         model.load_checkpoint_from_config(cfg)
+
         # Quantize qformer
         if qformer_quantization == "none":
             pass

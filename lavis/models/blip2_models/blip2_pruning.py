@@ -35,15 +35,24 @@ def magnitude_based_baseline(query_tokens, downsample=1):
 """
 Our pruning strategy based on token-wise importance
 """
-def importance_pruning(query_tokens, 
-                       cross_attentions=None,
-                       downsample=1):
+def importance_pruning(query_tokens,
+                       downsample=1, all_attn_scores=None):
     """
     Pruning strategy based on cross-attention
     """
-    # len(cross_attentions) == 12 (N_LAYERS in q-former)
     print(type(cross_attentions), len(cross_attentions))
-    # Shape (32, 12, 32, 257)
-    #        (Batch dim, head dim, query_tokens, image_tokens)
-    print(cross_attentions[0].shape)
+    for i in range(len(cross_attentions)):
+        if isinstance(cross_attentions[i],tuple):
+            print(f"dim {i}:",len(cross_attentions[i]))
+
+        elif isinstance(cross_attentions[i],torch.Tensor):
+            print(f"dim {i}:",cross_attentions[i].shape)
+    #importance_score = [item.sum(0).sum(1) for item in all_attn_scores]
+    # print(f"size {0}",cross_attentions[0].shape)
+
+
+
+
+
+    # print(cross_attentions)
     raise RuntimeError("Not implemented")
