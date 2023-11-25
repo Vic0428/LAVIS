@@ -346,6 +346,13 @@ class Blip2OPT(Blip2Base):
                     self_attentions=query_output.attentions,
                     downsample=self.cs242Config.token_pruning_level
                 )
+            elif self.cs242Config.token_pruning == "cross_attention_based":
+                query_output.last_hidden_state = cross_attention_pruning(
+                    query_output.last_hidden_state,
+                    cross_attentions=query_output.cross_attentions,
+                    downsample=self.cs242Config.token_pruning_level
+                )
+
 
             inputs_opt = self.opt_proj(query_output.last_hidden_state)
             atts_opt = torch.ones(inputs_opt.size()[:-1], dtype=torch.long).to(
@@ -454,7 +461,7 @@ class Blip2OPT(Blip2Base):
 
         # Pruning mode supported by CS242
         token_pruning = cfg.get("token_pruning", "none")
-        assert (token_pruning in ["none", "position", "topk", "our"])
+        # assert (token_pruning in ["none", "position", "topk", "our"])
         token_pruning_level = cfg.get("token_pruning_level", 1)
         assert (isinstance(token_pruning_level, int))
 
