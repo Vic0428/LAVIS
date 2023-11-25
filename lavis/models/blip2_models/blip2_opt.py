@@ -340,6 +340,12 @@ class Blip2OPT(Blip2Base):
                     cross_attentions=query_output.cross_attentions,
                     downsample=self.cs242Config.token_pruning_level
                 )
+            elif self.cs242Config.token_pruning == "self_attention_based":
+                query_output.last_hidden_state = self_attention_pruning(
+                    query_output.last_hidden_state,
+                    self_attentions=query_output.attentions,
+                    downsample=self.cs242Config.token_pruning_level
+                )
 
             inputs_opt = self.opt_proj(query_output.last_hidden_state)
             atts_opt = torch.ones(inputs_opt.size()[:-1], dtype=torch.long).to(
