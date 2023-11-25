@@ -1,4 +1,8 @@
 import torch
+from lavis.models.blip2_models.blip2_cs242 import init_logger
+
+pruning_logger = init_logger(__name__)
+
 """
 Baseline pruning strategies
 """
@@ -51,7 +55,8 @@ def importance_pruning(query_tokens,
 def self_attention_pruning(query_tokens,
                           self_attentions,
                           downsample=1):
-    DEBUG = False
+    pruning_logger.info("Apply self_attention pruning")
+    ALL_LAYERS = False
     """
     Pruning based on self attention proabbility
     """
@@ -59,11 +64,13 @@ def self_attention_pruning(query_tokens,
     reduced_seq_len = seq_len // downsample
     # (layer_dim, batch_dim, head_dim, query_dim, key_dim)
     self_attentions = torch.stack(self_attentions, dim=0)
-    sum_self_attentions = torch.sum(self_attentions, dim=(0, 2, 3))
+    if ALL_LAYERS:
+        pruning_logger.info("\tPruning based on all self_attention layers")
+        sum_self_attentions = torch.sum(self_attentions, dim=(0, 2, 3))
+    else:
+        pruning_logger.info("\tPruning based on the last self_attention layers")
+        sum_self_attentions = torch.sum(self_attentions[-1], dim=(1, 2))
 
-    if DEBUG:
-        for sample_id in range(sum_self_attentions.shape[0]):
-            print(f"sample_id={sample_id}, sum_self_attentions={sum_self_attentions[sample_id, :]}")
     # Select topK tokens for each sample
     selected_seq_batch = []
     for i in range(query_tokens.shape[0]):
@@ -78,19 +85,25 @@ def self_attention_pruning(query_tokens,
 def cross_attention_pruning(query_tokens,
                             cross_attentions,
                             downsample=1):
-    DEBUG = True
+    pruning_logger.info("Apply cross_attention pruning")
+    ALL_LAYERS = False
     seq_len = query_tokens.shape[1]
     reduced_seq_len = seq_len // downsample
     # Get cross attnetions
     cross_attentions = list(filter(lambda cross_attention: isinstance(cross_attention, torch.Tensor), cross_attentions))
-    cross_attentions = torch.stack(cross_attentions, dim=0)
-    # Expected cross attentions shape (layer_dim, bs_dim, head_dim, query_dim, key_dim)
-    # Reduce along layer dimension and head dimension
-    cross_attentions_reduced = torch.sum(cross_attentions, dim=(0, 2))
+    if ALL_LAYERS:
+        pruning_logger.info("\tPruning based on all cross attention layers")
+        cross_attentions = torch.stack(cross_attentions, dim=0)
+        # Expected cross attentions shape (layer_dim, bs_dim, head_dim, query_dim, key_dim)
+        # Reduce along layer dimension and head dimension
+        cross_attentions_reduced = torch.sum(cross_attentions, dim=(0, 2))
+    else:
+        pruning_logger.info("\tPruning based on the last cross attention layers")
+        cross_attentions_reduced = torch.sum(cross_attentions[-1], dim=(1))
     # Expected cross_attention_reduced shape (bs_dim, query_dim, key_dim)
     selected_seq_batch = []
     for i in range(query_tokens.shape[0]):
-        cross_attention_sample = cross_attentions_reduced[i, :, :]
+        cross_attention_sample = cross_attentions_reduced[i]
         # Higher prob => lower rank
         query_rankings = torch.argsort(cross_attention_sample, dim=0, descending=True) 
         # Average along image path dimension

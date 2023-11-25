@@ -4,20 +4,10 @@ from accelerate.utils import BnbQuantizationConfig, load_and_quantize_model
 from lavis.models.eva_vit import convert_weights_to_fp16
 import torch
 import torch.nn as nn
-import colorlog
+from lavis.models.blip2_models.blip2_cs242 import init_logger
 
 
-"""
-Initialize logger
-"""
-def init_logger():
-    handler = colorlog.StreamHandler()
-
-    logger = colorlog.getLogger(__name__)
-    handler.setFormatter(colorlog.ColoredFormatter('%(green)s%(levelname)s:%(name)s:\t%(message)s'))
-    logger.addHandler(handler)
-    return logger
-logger = init_logger()
+logger = init_logger(__name__)
 
 """
 Quantization functions
