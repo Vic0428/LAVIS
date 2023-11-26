@@ -106,10 +106,17 @@ def cross_attention_pruning(query_tokens,
     for i in range(batch_sz):
         # Shape: (head_dim, query_dim, key_dim)
         cross_attention_sample = cross_attentions_reduced[i]
-        # Each (head, image_token) scores query_tokens along the query dimension
-        query_rankings = torch.argsort(cross_attention_sample, dim=1)
-        # Vote: Aggregate score across (head_dim, key_dim)
+        # alt_query_rankings = torch.zeros((seq_len)).to('cuda')
+        # for j in range(cross_attention_sample.shape[2]):
+            # r = torch.argsort(torch.argsort(cross_attention_sample[:, :, j]))
+            # alt_query_rankings += torch.sum(r, dim=0)
+        # # Each (head, image_token) scores query_tokens along the query dimension
+        query_rankings = torch.argsort(torch.argsort(cross_attention_sample, dim=1), dim=1)
         query_rankings = torch.sum(query_rankings, dim=(0, 2))
+        # assert(query_rankings.equal(query_rankings) == True)
+
+        # Vote: Aggregate score across (head_dim, key_dim)
+        # query_rankings = torch.sum(query_rankings, dim=(0, 2))
         _, indices = torch.topk(query_rankings, k=reduced_seq_len)
         # Maintain in its original order
         sorted_indices, _ = torch.sort(indices)
