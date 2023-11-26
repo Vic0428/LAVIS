@@ -56,7 +56,7 @@ def self_attention_pruning(query_tokens,
                           self_attentions,
                           downsample=1):
     pruning_logger.info("Apply self_attention pruning")
-    ALL_LAYERS = False
+    ALL_LAYERS = True
     """
     Pruning based on self attention proabbility
     """
@@ -85,31 +85,32 @@ def self_attention_pruning(query_tokens,
 def cross_attention_pruning(query_tokens,
                             cross_attentions,
                             downsample=1):
-    pruning_logger.info("Apply cross_attention pruning")
+    pruning_logger.debug("Apply cross_attention pruning")
     ALL_LAYERS = False
-    seq_len = query_tokens.shape[1]
+    batch_sz, seq_len, _ = query_tokens.shape
     reduced_seq_len = seq_len // downsample
     # Get cross attnetions
     cross_attentions = list(filter(lambda cross_attention: isinstance(cross_attention, torch.Tensor), cross_attentions))
     if ALL_LAYERS:
-        pruning_logger.info("\tPruning based on all cross attention layers")
-        cross_attentions = torch.stack(cross_attentions, dim=0)
+        pruning_logger.debug("\tPruning based on all cross attention layers")
         # Expected cross attentions shape (layer_dim, bs_dim, head_dim, query_dim, key_dim)
+        cross_attentions = torch.stack(cross_attentions, dim=0)
         # Reduce along layer dimension and head dimension
-        cross_attentions_reduced = torch.sum(cross_attentions, dim=(0, 2))
+        cross_attentions_reduced = torch.sum(cross_attentions, dim=0)
     else:
-        pruning_logger.info("\tPruning based on the last cross attention layers")
-        cross_attentions_reduced = torch.sum(cross_attentions[-1], dim=(1))
-    # Expected cross_attention_reduced shape (bs_dim, query_dim, key_dim)
+        pruning_logger.debug("\tPruning based on the last cross attention layers")
+        cross_attentions_reduced = cross_attentions[-1]
+
+    # Expected cross_attention_reduced shape (bs_dim, head_dim, query_dim, key_dim)
     selected_seq_batch = []
-    for i in range(query_tokens.shape[0]):
+    for i in range(batch_sz):
+        # Shape: (head_dim, query_dim, key_dim)
         cross_attention_sample = cross_attentions_reduced[i]
-        # Higher prob => lower rank
-        query_rankings = torch.argsort(cross_attention_sample, dim=0, descending=True) 
-        # Average along image path dimension
-        query_rankings = torch.mean(query_rankings.float(), dim=1)
-        # Find indicies with smallest ranks
-        _, indices = torch.topk(query_rankings, k=reduced_seq_len, largest=False)
+        # Each (head, image_token) scores query_tokens along the query dimension
+        query_rankings = torch.argsort(cross_attention_sample, dim=1)
+        # Vote: Aggregate score across (head_dim, key_dim)
+        query_rankings = torch.sum(query_rankings, dim=(0, 2))
+        _, indices = torch.topk(query_rankings, k=reduced_seq_len)
         # Maintain in its original order
         sorted_indices, _ = torch.sort(indices)
         selected_seq_batch.append(query_tokens[i, sorted_indices, :])
