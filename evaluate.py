@@ -29,6 +29,7 @@ from lavis.processors import *
 from lavis.runners.runner_base import RunnerBase
 from lavis.tasks import *
 
+import time
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training")
@@ -89,7 +90,10 @@ def main():
     runner = RunnerBase(
         cfg=cfg, job_id=job_id, task=task, model=model, datasets=datasets
     )
+    start_time = time.time()
     runner.evaluate(skip_reload=True)
+    elapsed_time = time.time() - start_time
+    print(f"Elapsed time: {elapsed_time} seconds")
 
 
 if __name__ == "__main__":
