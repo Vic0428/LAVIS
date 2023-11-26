@@ -223,7 +223,7 @@ class BertSelfAttention(nn.Module):
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
 
-        print('query_layer_shape:', query_layer.shape)
+        # print('query_layer_shape:', query_layer.shape)
 
         past_key_value = (key_layer, value_layer)
 

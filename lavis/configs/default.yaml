@@ -7,4 +7,5 @@ env:
   # For default users
   # cache_root: "cache"
   # For internal use with persistent storage
-  cache_root: "/home/blip2/LAVIS/lavis"
+  # cache_root: "/home/blip2/LAVIS/lavis"
+  cache_root: "/home/weiqi/.cache/lavis"

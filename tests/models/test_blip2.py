@@ -76,12 +76,22 @@ class TestBlip2:
 
         # (layer_dim, bs_dim, head_dim, query_dim, key_dim) 
         all_attn_probs = torch.stack(all_attn_probs, dim=0)
+        importance = torch.zeros(all_attn_probs.shape[3], device = 'cuda:0')
+        for i in range(all_attn_probs.shape[-1]):
+            r = torch.argsort(torch.argsort(all_attn_probs[:,:,:,:,i]))
+            importance += torch.sum(r, dim=(0,1,2))
+        rank_arg= torch.argsort(importance, descending=True)
+        print('importance_score:', importance)
+        print('rank_arg:', rank_arg)
+
+
+
         # sum_attn_probs = torch.sum(all_attn_probs, dim=(2, 4))
-        sum_attn_probs = torch.sum(all_attn_probs, dim=(2, 3))
-        for layer_id in range(sum_attn_probs.shape[0]):
-            print(f"layer_id={layer_id}, sum_attn_probs={sum_attn_probs[layer_id, :, :]}")
-        print(all_attn_probs.shape)
-        print(sum_attn_probs.shape)
+        #sum_attn_probs = torch.sum(all_attn_probs, dim=(2, 3))
+        #for layer_id in range(sum_attn_probs.shape[0]):
+            #print(f"layer_id={layer_id}, sum_attn_probs={sum_attn_probs[layer_id, :, :]}")
+        #print(all_attn_probs.shape)
+        #print(sum_attn_probs.shape)
             #for m in layer.modules():
                 #if isinstance(m, BertSelfAttention) and m.is_cross_attention == True:
                     #print('qformer_m:', m)

@@ -337,7 +337,7 @@ class Blip2OPT(Blip2Base):
             elif self.cs242Config.token_pruning == "our":
                 query_output.last_hidden_state = importance_pruning(
                     query_output.last_hidden_state,
-                    cross_attentions=query_output.cross_attentions,
+                    Qformer=self.Qformer,
                     downsample=self.cs242Config.token_pruning_level
                 )
 
