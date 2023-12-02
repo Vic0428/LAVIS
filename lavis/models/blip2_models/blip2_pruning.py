@@ -154,10 +154,9 @@ def cross_attention_pruning_with_image_weight(query_tokens,
         
         # Each (head, image_token) scores query_tokens along the query dimension
         query_rankings = torch.argsort(torch.argsort(cross_attention_sample, dim=1), dim=1)
-        query_rankings = torch.sum(query_rankings, dim=(0, 2))
-
         # Apply image_weight to the query_rankings
         weighted_query_rankings = query_rankings * image_weight[i]
+        query_rankings = torch.sum(query_rankings, dim=(0, 2))
 
         # Vote: Aggregate score across (head_dim, key_dim)
         _, indices = torch.topk(weighted_query_rankings, k=reduced_seq_len)
