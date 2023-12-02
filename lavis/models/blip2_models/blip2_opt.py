@@ -359,6 +359,8 @@ class Blip2OPT(Blip2Base):
                     vit=self.visual_encoder,
                     downsample=self.cs242Config.token_pruning_level
                 )
+            else:
+                raise RuntimeError("Not implemented")
 
 
             inputs_opt = self.opt_proj(query_output.last_hidden_state)
