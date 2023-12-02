@@ -310,7 +310,8 @@ class Blip2OPT(Blip2Base):
     ):
         image = samples["image"]
         with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+            image_embeds, vision_self_attentions = self.visual_encoder(image, output_attentions=True)
+            image_embeds = self.ln_vision(image_embeds)
             image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
                 image.device
             )
@@ -350,6 +351,13 @@ class Blip2OPT(Blip2Base):
                 query_output.last_hidden_state = cross_attention_pruning(
                     query_output.last_hidden_state,
                     cross_attentions=query_output.cross_attentions,
+                    downsample=self.cs242Config.token_pruning_level
+                )
+            elif self.cs242Config.token_pruning == "cross_attention_with_image_weight":
+                query_output.last_hidden_state = cross_attention_pruning_with_image_weight(
+                    query_output.last_hidden_state,
+                    cross_attentions=query_output.cross_attentions,
+                    vit_self_attentions=vision_self_attentions,
                     downsample=self.cs242Config.token_pruning_level
                 )
 
