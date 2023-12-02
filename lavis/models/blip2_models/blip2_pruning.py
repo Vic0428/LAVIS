@@ -138,7 +138,8 @@ def cross_attention_pruning_with_image_weight(query_tokens,
 
     cross_attentions = torch.stack(cross_attentions, dim=0)
     # Reduce along layer dimension and head dimension
-    cross_attentions_reduced = torch.sum(cross_attentions, dim=0)
+    # cross_attentions_reduced = torch.sum(cross_attentions, dim=0)
+    cross_attentions_reduced = cross_attentions[-1]
 
     # Get image weight
     # (layer_dim, batch_dim, head_dim, query_dim, key_dim)
