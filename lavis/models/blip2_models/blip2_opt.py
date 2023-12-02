@@ -321,6 +321,7 @@ class Blip2OPT(Blip2Base):
                 encoder_hidden_states=image_embeds,
                 encoder_attention_mask=image_atts,
                 return_dict=True,
+                output_attentions=True
             )
             # When enable token_pruning, this the baseline strategy
             if self.cs242Config.token_pruning == "position":
@@ -336,7 +337,9 @@ class Blip2OPT(Blip2Base):
             elif self.cs242Config.token_pruning == "our":
                 query_output.last_hidden_state = importance_pruning(
                     query_output.last_hidden_state,
-                    downsample=self.cs242Config.token_pruning_level
+                    Qformer=self.Qformer,
+                    downsample=self.cs242Config.token_pruning_level,
+                    mode="first_layer"
                 )
 
             inputs_opt = self.opt_proj(query_output.last_hidden_state)
@@ -470,6 +473,7 @@ class Blip2OPT(Blip2Base):
         )
         # Load qformer parameters
         model.load_checkpoint_from_config(cfg)
+
         # Quantize qformer
         if qformer_quantization == "none":
             pass
