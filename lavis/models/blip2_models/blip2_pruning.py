@@ -136,8 +136,9 @@ def cross_attention_pruning_with_image_weight(query_tokens,
     # Get cross attentions
     cross_attentions = list(filter(lambda cross_attention: isinstance(cross_attention, torch.Tensor), cross_attentions))
 
-    pruning_logger.debug("\tPruning based on the last cross attention layers")
-    cross_attentions_reduced = cross_attentions[-1]
+    cross_attentions = torch.stack(cross_attentions, dim=0)
+    # Reduce along layer dimension and head dimension
+    cross_attentions_reduced = torch.sum(cross_attentions, dim=0)
 
     # Get image weight
     # (layer_dim, batch_dim, head_dim, query_dim, key_dim)
@@ -151,15 +152,14 @@ def cross_attention_pruning_with_image_weight(query_tokens,
     for i in range(batch_sz):
         # Shape: (head_dim, query_dim, key_dim)
         cross_attention_sample = cross_attentions_reduced[i]
-        
+        weighted_cross_attention = cross_attention_sample * image_weight[i]
+
         # Each (head, image_token) scores query_tokens along the query dimension
-        query_rankings = torch.argsort(torch.argsort(cross_attention_sample, dim=1), dim=1)
-        print(query_rankings.shape, image_weight[i].shape)
-        # Apply image_weight to the query_rankings
-        weighted_query_rankings = query_rankings * image_weight[i]
-        print(weighted_query_rankings.shape)
+        weighted_query_rankings = torch.argsort(torch.argsort(weighted_cross_attention, dim=1), dim=1)
+        print(weighted_query_rankings.shape, image_weight[i].shape)
+        
         weighted_query_rankings = torch.sum(weighted_query_rankings, dim=(0, 2))
-        print(query_rankings.shape)
+        print(weighted_query_rankings.shape)
 
         # Vote: Aggregate score across (head_dim, key_dim)
         _, indices = torch.topk(weighted_query_rankings, k=reduced_seq_len)
