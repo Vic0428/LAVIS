@@ -115,7 +115,7 @@ class Attention(nn.Module):
         self.proj = nn.Linear(all_head_dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-    def forward(self, x, rel_pos_bias=None, output_attentions=False):
+    def forward(self, x, rel_pos_bias=None):
         B, N, C = x.shape
         qkv_bias = None
         if self.q_bias is not None:
@@ -140,16 +140,14 @@ class Attention(nn.Module):
             attn = attn + rel_pos_bias
         
         attn = attn.softmax(dim=-1)
+        self.self_attentions = attn.detach().clone()
         attn = self.attn_drop(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
         x = self.proj(x)
         x = self.proj_drop(x)
-        
-        if output_attentions:
-            return x, attn
-        else:
-            return x
+
+        return x
 
 
 class Block(nn.Module):
