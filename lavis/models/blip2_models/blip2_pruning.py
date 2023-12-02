@@ -130,19 +130,12 @@ def cross_attention_pruning_with_image_weight(query_tokens,
                                               vit_self_attentions,
                                               downsample=1):
     pruning_logger.debug("Apply cross_attention pruning with image weight")
-    # ALL_LAYERS = False
-    
+   
     batch_sz, seq_len, _ = query_tokens.shape
     reduced_seq_len = seq_len // downsample
     # Get cross attentions
     cross_attentions = list(filter(lambda cross_attention: isinstance(cross_attention, torch.Tensor), cross_attentions))
-    # if ALL_LAYERS:
-    #     pruning_logger.debug("\tPruning based on all cross attention layers")
-    #     # Expected cross attentions shape (layer_dim, bs_dim, head_dim, query_dim, key_dim)
-    #     cross_attentions = torch.stack(cross_attentions, dim=0)
-    #     # Reduce along layer dimension and head dimension
-    #     cross_attentions_reduced = torch.sum(cross_attentions, dim=0)
-    # else:
+
     pruning_logger.debug("\tPruning based on the last cross attention layers")
     cross_attentions_reduced = cross_attentions[-1]
 
@@ -150,9 +143,8 @@ def cross_attention_pruning_with_image_weight(query_tokens,
     # (layer_dim, batch_dim, head_dim, query_dim, key_dim)
     vit_self_attentions = torch.stack(vit_self_attentions, dim=0)
     image_scores = torch.sum(vit_self_attentions[-1], dim=(1, 2)) # shape (batch_dim, key_dim)
-    # Compute rankings of image_scores
-    image_weight = torch.argsort(torch.argsort(image_scores, dim=1), dim=1)
-
+    image_weight = torch.nn.functional.softmax(image_scores, dim=1)
+    
     # Expected cross_attention_reduced shape (bs_dim, head_dim, query_dim, key_dim)
     selected_seq_batch = []
     for i in range(batch_sz):
