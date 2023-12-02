@@ -145,7 +145,7 @@ def cross_attention_pruning_with_image_weight(query_tokens,
     vit_self_attentions = [b.attn.self_attentions for b in vit.blocks]
     vit_self_attentions = torch.stack(vit_self_attentions, dim=0)
     image_scores = torch.sum(vit_self_attentions[-1], dim=(1, 2)) # shape (batch_dim, key_dim)
-    image_weight = torch.nn.functional.softmax(image_scores, dim=1)
+    image_weight = torch.nn.functional.normalize(image_scores, dim=1)
     
     # Expected cross_attention_reduced shape (bs_dim, head_dim, query_dim, key_dim)
     selected_seq_batch = []
